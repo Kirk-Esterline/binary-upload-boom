@@ -30,7 +30,7 @@ module.exports = {
     try {
       // Upload image to cloudinary
       const result = await cloudinary.uploader.upload(req.file.path);
-
+      console.log(req.body)
       await Post.create({
         title: req.body.title,
         image: result.secure_url,
@@ -54,6 +54,18 @@ module.exports = {
         }
       );
       console.log("Likes +1");
+      res.redirect(`/post/${req.params.id}`);
+    } catch (err) {
+      console.log(err);
+    }
+  },
+  addComment: async (req, res) => {
+    try{
+      await Post.findOneAndUpdate(
+        { _id: req.params.id },
+        {$set: { comments: req.body.comment }}
+      );
+      console.log("Comment Added");
       res.redirect(`/post/${req.params.id}`);
     } catch (err) {
       console.log(err);
