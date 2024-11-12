@@ -1,5 +1,7 @@
 const cloudinary = require("../middleware/cloudinary");
 const Post = require("../models/Post");
+const Comment = require("../models/comment");
+const User = require("../models/User")
 
 module.exports = {
   getProfile: async (req, res) => {
@@ -21,7 +23,10 @@ module.exports = {
   getPost: async (req, res) => {
     try {
       const post = await Post.findById(req.params.id);
-      res.render("post.ejs", { post: post, user: req.user });
+      const comments = await Comment.find({ postId: req.params.id })
+      const users = await User.find().lean()
+      res.render("post.ejs", { post: post, user: req.user, comments: comments, users: users });
+      console.log(users)
     } catch (err) {
       console.log(err);
     }
@@ -30,7 +35,6 @@ module.exports = {
     try {
       // Upload image to cloudinary
       const result = await cloudinary.uploader.upload(req.file.path);
-      console.log(req.body)
       await Post.create({
         title: req.body.title,
         image: result.secure_url,
@@ -61,10 +65,11 @@ module.exports = {
   },
   addComment: async (req, res) => {
     try{
-      await Post.findOneAndUpdate(
-        { _id: req.params.id },
-        {$set: { comments: req.body.comment }}
-      );
+      await Comment.create({ 
+        postId: req.params.id,
+        comment: req.body.comment,
+        user: req.user.id,
+      });
       console.log("Comment Added");
       res.redirect(`/post/${req.params.id}`);
     } catch (err) {
